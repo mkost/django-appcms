@@ -1,12 +1,13 @@
 from django import template
-from classytags.arguments import Argument,MultiValueArgument 
+from django.conf import settings
+from classytags.arguments import Argument, MultiValueArgument
 from classytags.core import Tag, Options
 from django.template.defaultfilters import safe
+
 from django.core.cache import cache
 from ..models import Placeholder
 
 from cms.templatetags.cms_tags import PlaceholderOptions
-
 from django.utils.safestring import mark_safe
 
 register = template.Library()
@@ -30,18 +31,19 @@ class RenderPlaceholder(Tag):
             return ''
         if not name:
             return ''
-        
+
         if not request.user.is_staff:
             cached = cache.get('placeholder-%s' % name)
             if cached:
                 return cached
             else:
-                resp = _get_placeholder(name, context, width) 
+                resp = _get_placeholder(name, context, width)
                 cache.set('placeholder-%s' % name, resp, 60)
                 return resp
 
-        return _get_placeholder(name, context, width) 
+        return _get_placeholder(name, context, width)
 register.tag(RenderPlaceholder)
+
 
 class RenderGetPlaceholder(Tag):
     """
@@ -51,7 +53,7 @@ class RenderGetPlaceholder(Tag):
     case of an external app using a placeholder)
 
     {% get_placeholder ["string"|placeholder_var] as variable_name %}
-    
+
     e.g.
     {% load extra_cms_tags %}
     {% get_placeholder "My Placeholder" as my_placeholder %}
@@ -75,15 +77,23 @@ class RenderGetPlaceholder(Tag):
         ],
     )
 
-
-    def render_tag(self, context, name,extra_bits, width, varname, nodelist=None):
+    def render_tag(self, context, name, extra_bits, width, varname, nodelist=None):
         def _get_placeholder(name, context, width):
             placeholder, created = Placeholder.objects.get_or_create(name=name)
             placeholder.placeholder.slot = name
             return safe(placeholder.placeholder.render(context, width))
 
+        request = context.get('request', None)
+
+        orginal_language_code = request.LANGUAGE_CODE
+        default_language_code = settings.LANGUAGE_CODE[:2]
 
         content = _get_placeholder(name, context, None)
+        if not content:
+            request.LANGUAGE_CODE = default_language_code
+            content = _get_placeholder(name, context, None)
+            request.LANGUAGE_CODE = orginal_language_code
+
         context[varname] = mark_safe(content)
         return ""
 
