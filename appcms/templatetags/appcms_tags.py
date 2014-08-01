@@ -12,6 +12,7 @@ from django.utils.safestring import mark_safe
 
 register = template.Library()
 
+
 class RenderPlaceholder(Tag):
     name = 'appcms_placeholder'
     options = Options(
@@ -33,12 +34,13 @@ class RenderPlaceholder(Tag):
             return ''
 
         if not request.user.is_staff:
-            cached = cache.get('placeholder-%s' % name)
+            language_code = request.LANGUAGE_CODE
+            cached = cache.get('placeholder-%s-%s' % (name, language_code))
             if cached:
                 return cached
             else:
                 resp = _get_placeholder(name, context, width)
-                cache.set('placeholder-%s' % name, resp, 60)
+                cache.set('placeholder-%s-%s' % (name, language_code), resp, 60)
                 return resp
 
         return _get_placeholder(name, context, width)
