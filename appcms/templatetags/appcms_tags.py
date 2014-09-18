@@ -1,3 +1,5 @@
+import string
+
 from django import template
 from django.conf import settings
 from classytags.arguments import Argument, MultiValueArgument
@@ -35,12 +37,13 @@ class RenderPlaceholder(Tag):
 
         if not request.user.is_staff:
             language_code = request.LANGUAGE_CODE
-            cached = cache.get('placeholder-%s-%s' % (name, language_code))
+            cache_key = filter(string.printable.__contains__, 'placeholder-%s-%s' % (name, language_code))
+            cached = cache.get(cache_key)
             if cached:
                 return cached
             else:
                 resp = _get_placeholder(name, context, width)
-                cache.set('placeholder-%s-%s' % (name, language_code), resp, 60)
+                cache.set(cache_key, resp, 60)
                 return resp
 
         return _get_placeholder(name, context, width)
