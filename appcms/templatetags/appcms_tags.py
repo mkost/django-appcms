@@ -37,7 +37,7 @@ class RenderPlaceholder(Tag):
 
         if not request.user.is_staff:
             language_code = request.LANGUAGE_CODE
-            cache_key = filter(string.printable.__contains__, 'placeholder-%s-%s' % (name, language_code))
+            cache_key = filter(string.printable.__contains__, 'placeholder-%s-%s' % (name, language_code)).replace(' ', '')
             cached = cache.get(cache_key)
             if cached:
                 return cached
