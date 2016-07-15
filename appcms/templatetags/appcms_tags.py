@@ -36,6 +36,7 @@ class RenderPlaceholder(Tag):
             return ''
 
         if not request.user.is_staff:
+            """ # Cache turned off. Two lines below returns dynamic data
             language_code = request.LANGUAGE_CODE
             cache_key = filter(string.printable.__contains__, 'placeholder-%s-%s' % (name, language_code)).replace(' ', '')
             cached = cache.get(cache_key)
@@ -45,6 +46,9 @@ class RenderPlaceholder(Tag):
                 resp = _get_placeholder(name, context, width)
                 cache.set(cache_key, resp, 60)
                 return resp
+            """
+            resp = _get_placeholder(name, context, width)
+            return resp
 
         return _get_placeholder(name, context, width)
 register.tag(RenderPlaceholder)
